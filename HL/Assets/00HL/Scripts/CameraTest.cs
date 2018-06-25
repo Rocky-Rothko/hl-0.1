@@ -9,10 +9,10 @@ public class CameraTest : MonoBehaviour
 	float speed = 25f;
 	float step = 0f;
 
-	void Start()
-	{
+	//void Start()
+	//{
 
-	}
+	//}
 
 	void Update()
 	{
