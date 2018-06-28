@@ -1,131 +1,67 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using System;
-using System.Linq;
 using UnityEngine;
 
 public class MeshTest : MonoBehaviour {
-
-	//public MeshFilter _plane;
-	public GameObject _a;
-	public GameObject _b;
-	public GameObject _c;
-	public GameObject _d;
-    public GameObject _e;
-    public GameObject _f;
-	int[] quad_pair;
-
-	CameraTest cam;
-	Renderer rend;
-	MeshCollider col;
-
-	int[] tris;
-	Vector3[] verts;
-	Vector2[] uvs;
-
-	void Start()
-	{
-		cam = Camera.main.gameObject.GetComponent<CameraTest>();
-		rend = GetComponent<Renderer>();
-		col = GetComponent<MeshCollider>();
-
-		//_plane.GetComponent<Plane>      
-		Mesh mesh = GetComponent<MeshFilter>().mesh;
-		tris = mesh.triangles;
-		verts = mesh.vertices;
-		uvs = mesh.uv;
-
-	}
-
-	void InstantiateField ( int hit_triangle_index ) {
-
-		int[] tri_indices = GetHitIndices( hit_triangle_index );      
-		float[] tri_sides = CalculateVertDistances( tri_indices );    
-		int tri_type = GetTriOrientation( tri_sides );
-
-		int[] tri_hypo = new int[2];
-		switch (tri_type)
-        {
-            case 0:
-				tri_hypo[0] = tri_indices[0];
-				tri_hypo[1] = tri_indices[1];
-                break;
-			case 1:
-                tri_hypo[0] = tri_indices[2];
-                tri_hypo[1] = tri_indices[0];
-                break;
-            default:
-				Debug.LogError("Polygon unrecognised!");
-				break;
-        }
-
-		IdentifyQuadPair(tri_hypo, hit_triangle_index);
-
-		_a.transform.position = verts[ tris[ quad_pair[ 0 ] ] ];
-		_b.transform.position = verts[ tris[ quad_pair[ 0 ] + 1 ] ];
-		_c.transform.position = verts[ tris[ quad_pair[ 0 ] + 2 ] ];
-        _d.transform.position = verts[ tris[ quad_pair[ 1 ] ] ];
-        _e.transform.position = verts[ tris[ quad_pair[ 1 ] + 1 ] ];
-        _f.transform.position = verts[ tris[ quad_pair[ 1 ] + 2 ] ];
-		Debug.Log("T1: " + quad_pair[0] + ", T2: " + quad_pair[1]);
-		
-	}
-
-	int[] GetHitIndices(int _hit)
-	{
-		int[] _indices = new int[3];
-		_indices[0] = tris[ _hit ];
-		_indices[1] = tris[ _hit + 1 ];
-		_indices[2] = tris[ _hit + 2 ];
-        
-		return _indices;
-	}
     
-	float[] CalculateVertDistances(int[] _tris)
+	public GameObject field;
+    
+    int[] tris;
+	Vector3[] verts;
+	Vector3[] norms;
+	Vector2[] uvs;
+    
+	CameraTest cam;
+    
+	readonly int[] quad_keys = { 0, 1, 4, 5 };
+	readonly int[] tri_keys = { 0, 1, 2, 0, 2, 3 };
+
+	void Start() {
+
+        cam = Camera.main.gameObject.GetComponent<CameraTest>();
+
+        Mesh mesh = GetComponent<MeshFilter>().mesh;
+        tris = mesh.triangles;
+        verts = mesh.vertices;
+		norms = mesh.normals;
+        uvs = mesh.uv;
+	}
+
+    void InstantiateField( int _hit)
     {
-		float[] _sides = new float[3];
-		_sides[0] = Vector3.Distance(verts[_tris[0]]
-		                               , verts[_tris[1]]);
-		_sides[1] = Vector3.Distance(verts[_tris[2]]
-                                       , verts[_tris[0]]);
-		_sides[2] = Vector3.Distance(verts[_tris[2]]
-                                       , verts[_tris[1]]);
+		int mod = _hit % 2;
+		int tri_even = _hit - mod;
+		int tri_index = tri_even * 3;
+        
+		int vert_index = -1;
+		Vector3[] quad_verts = new Vector3[ 4 ];
+		Vector3[] quad_norms = new Vector3[ 4 ];
+        Vector2[] quad_uvs = new Vector2[ 4 ];
 
-		return _sides;
-	}
+		Vector3 target = Vector3.zero;
+		for (int v = 0; v < 4; v++)
+		{
+			vert_index = tris[ tri_index + quad_keys[ v ] ];
 
-	int GetTriOrientation(float[] _lengths)
-	{
-		float max_value = _lengths.Max();
-		int max_index = Array.IndexOf(_lengths, max_value);
+			quad_verts[ v ] = verts[ vert_index ];
+			quad_norms[ v ] = norms[ vert_index ];
+			quad_uvs[ v ] = uvs[ vert_index ];
 
-		return max_index;
-	}
+			target += verts[vert_index];
 
-	void IdentifyQuadPair(int[] _hypo, int _hit)
-	{
-        bool h1_found;
-        bool h2_found;
-        int vert_index;
+		}
 
-        for (int t = 0; t < tris.Length; t += 3)
-        {
-            h1_found = false;
-            h2_found = false;
-            
-            for (int v = 0; v < 3; v++)
-            {
-                vert_index = t + v;
-				if (_hypo[0] == tris[vert_index]) { h1_found = true; }
-				if (_hypo[1] == tris[vert_index]) { h2_found = true; }
-            }
+		Mesh quad_mesh = field.GetComponent<MeshFilter>().mesh;
+		quad_mesh.vertices = quad_verts;
+		quad_mesh.triangles = tri_keys;
+		quad_mesh.normals = quad_norms;
+		quad_mesh.uv = quad_uvs;
 
-            if (h1_found && h2_found && t != _hit)
-            {
-				quad_pair = new int[2] { _hit, t };
-            }
-        }
-	}
+		field.GetComponent<MeshFilter>().mesh = quad_mesh;
+		field.transform.GetChild(0).position = target / 4;
+
+    }
+
     
     //------------------------ events -------------------------
     void OnMouseDown() {
@@ -136,8 +72,9 @@ public class MeshTest : MonoBehaviour {
         if (Physics.Raycast(ray, out hit))
         {
 			cam.AdjustPath( Quaternion.LookRotation( hit.point ) );
-         
-			InstantiateField( hit.triangleIndex * 3 );
+
+			InstantiateField( hit.triangleIndex );
+
         }
     }
 }
