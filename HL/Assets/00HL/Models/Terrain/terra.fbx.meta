@@ -1,6 +1,6 @@
 fileFormatVersion: 2
-guid: efb0f0159a482431887c28a7d0e0fe1e
-timeCreated: 1529910309
+guid: aa0c726892f714813ac707574dfc1489
+timeCreated: 1530233585
 licenseType: Free
 ModelImporter:
   serializedVersion: 22
@@ -10,7 +10,7 @@ ModelImporter:
     2100000: Terrain
     2300000: //RootNode
     3300000: //RootNode
-    4300000: Cube
+    4300000: Terra
   externalObjects:
   - first:
       type: UnityEngine:Material
@@ -56,9 +56,9 @@ ModelImporter:
     swapUVChannels: 0
     generateSecondaryUV: 0
     useFileUnits: 1
-    optimizeMeshForGPU: 0
-    keepQuads: 1
-    weldVertices: 0
+    optimizeMeshForGPU: 1
+    keepQuads: 0
+    weldVertices: 1
     preserveHierarchy: 0
     indexFormat: 0
     secondaryUVAngleDistortion: 8
